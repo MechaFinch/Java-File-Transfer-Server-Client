@@ -185,8 +185,9 @@
  		toServer.println("verifyConnection");
  		toServer.flush();
  		if(!serverOutput.readLine().equals("connectionVerify")){
- 			System.out.println("Connection to port " + server.getPort() + "failed. Invalid handshake recieved.");
+ 			System.out.println("Connection to port " + server.getPort() + " failed. Invalid handshake recieved.");
  			connected = false;
+ 			return;
  		}
  		System.out.println("Server connected successfully");
  	}

@@ -82,22 +82,30 @@ import java.util.ArrayList;
  				String[] input = inputRaw.split(" ");
  				
  				if(input[0].equalsIgnoreCase("sendtmptxt")) {
+ 					String cont = "";
+ 					for(int i = 3; i < input.length; i++) {
+ 						cont += input[i] + ((i == input.length - 1) ? "" : " ");
+ 					}
  					String[] todata = {
  							"tmptxt",
  							input[1],
  							input[2],
- 							input[3]
+ 							cont
  					};
  					Server.databasetext.add(todata);
  					System.out.println("Temporary text recieved from client at " + clientAddress + " on port " + clientPort + " with id " + input[1] + ".");
  					toClient.println("ftmptextrecieved");
  					toClient.flush();
  				} else if(input[0].equalsIgnoreCase("sendtxt")) {
+ 					String cont = "";
+ 					for(int i = 3; i < input.length; i++) {
+ 						cont += input[i] + ((i == input.length - 1) ? "" : " ");
+ 					}
  					String[] todata = {
  							"txt",
  							input[1],
  							input[2],
- 							input[3]
+ 							cont
  					};
  					Server.databasetext.add(todata);
  					System.out.println("Text recieved from client at " + clientAddress + " on port " + clientPort + " with id " + input[1] + ".");
