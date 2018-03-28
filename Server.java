@@ -20,12 +20,23 @@ import java.util.ArrayList;
  		
  		System.out.println("Server successfully initiated on port " + port);
  		
- 		while(true){
- 			Socket client = server.accept();
- 			
- 			Runnable connection = new ConnectionHandler(client);
- 			new Thread(connection).start();
- 		}
+ 		Thread ConnectionListener = new Thread(){
+ 			public void run(){
+ 				while(true){
+ 					try{
+			 			Socket client = server.accept();
+			 			
+			 			Runnable connection = new ConnectionHandler(client);
+			 			new Thread(connection).start();
+			 		} catch(IOException e){
+			 		}
+		 		}
+ 			}
+ 		};
+ 		
+ 		Thread mon = new Thread(new ServerMonitor());
+ 		ConnectionListener.start();
+ 		mon.start();
  	}
  }
  
@@ -153,6 +164,42 @@ import java.util.ArrayList;
  					if(type.equals("tmptxt")) {
  						Server.databasetext.remove(id);
  					}
+ 				} else if(input[0].equals("rmtxt")){
+ 					System.out.println("Client at " + clientAddress + " on port " + clientPort + " has sent a request to remove text id " + input[1] + ".");
+ 					String[] dat;
+ 					boolean p = true;
+ 					int id = -1;
+ 					for(int i = 0; i < Server.databasetext.size(); i++){
+ 						dat = Server.databasetext.get(i);
+ 						
+ 						if(dat[1].equals(input[1])){
+ 							if(dat[2].equals(input[2])){
+ 								id = i;
+ 								break;
+ 							} else {
+ 								toClient.println("fpasswrong");
+ 								toClient.flush();
+ 								System.out.println("The text requested for removal by the client at " + clientAddress + " on port " + clientPort + " could not be removed because the password was incorrect.");
+ 								p = false;
+ 								break;
+ 							}
+ 						}
+ 					}
+ 					
+ 					if(!p) continue;
+ 					
+ 					if(id == -1){
+ 						toClient.println("fnotfound");
+ 						toClient.flush();
+ 						System.out.println("The text requested for removal by the client at " + clientAddress + " on port " + clientPort + " could not be found.");
+ 						continue;
+ 					}
+ 					
+ 					Server.databasetext.remove(id);
+ 					
+ 					toClient.println("fdone");
+ 					toClient.flush();
+ 					System.out.println("The text requested for removal by the client at " + clientAddress + " on port " + clientPort + " had been removed.");
  				}
  			}
  		} catch(IOException e) {
@@ -172,6 +219,84 @@ import java.util.ArrayList;
  			}
  			
  			return;
+ 		}
+ 	}
+ }
+ 
+ class ServerMonitor implements Runnable{
+ 	ServerMonitor(){
+ 	}
+ 	
+ 	public void run(){
+ 		while(true){
+ 			String input = AR.readString("", "");
+ 			String[] com = input.split(" ");
+ 			
+ 			if(com[0].equalsIgnoreCase("listtext")){
+ 				if(com.length != 2){
+ 					System.out.println("Invalid Use! Must be 'listtext <[all, tmp, per]>'!");
+ 					continue;
+ 				}
+ 				
+ 				if(com[1].equalsIgnoreCase("all")){
+ 					showAllText();
+ 				} else if(com[1].equalsIgnoreCase("tmp")){
+ 					showTmpText();
+ 				} else if(com[1].equalsIgnoreCase("per")){
+ 					showPerText();
+ 				} else {
+ 					System.out.println("Invalid section");
+ 				}
+ 			}
+ 		}
+ 	}
+ 	
+ 	void showAllText(){
+ 		ArrayList<String> tmp = new ArrayList<String>();
+ 		ArrayList<String> per = new ArrayList<String>();
+ 		
+ 		for(int i = 0; i < Server.databasetext.size(); i++){
+ 			String[] s = Server.databasetext.get(i);
+ 			
+ 			if(s[0].equals("tmptxt")){
+ 				tmp.add(s[1]);
+ 			} else {
+ 				per.add(s[1]);
+ 			}
+ 		}
+ 		
+ 		System.out.println("Temporary Text IDs:");
+ 		
+ 		for(int i = 0; i < tmp.size(); i++){
+ 			System.out.println(tmp.get(i));
+ 		}
+ 		
+ 		System.out.println("Permanant Text IDs:");
+ 		
+ 		for(int i = 0; i < per.size(); i++){
+ 			System.out.println(per.get(i));
+ 		}
+ 	}
+ 	
+ 	void showTmpText(){
+ 		System.out.println("Temporary Text IDs:");
+ 		
+ 		for(int i = 0; i < Server.databasetext.size(); i++){
+ 			String[] s = Server.databasetext.get(i);
+ 			if(s[0].equals("tmptxt")){
+ 				System.out.println(s[1]);
+ 			}
+ 		}
+ 	}
+ 	
+ 	void showPerText(){
+ 		System.out.println("Permanant Text IDs:");
+ 		
+ 		for(int i = 0; i < Server.databasetext.size(); i++){
+ 			String[] s = Server.databasetext.get(i);
+ 			if(s[0].equals("txt")){
+ 				System.out.println(s[1]);
+ 			}
  		}
  	}
  }

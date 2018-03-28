@@ -86,7 +86,32 @@
  				}
  				
  				downloadText();
+ 			} else if(comm[0].equalsIgnoreCase("removetext")){
+ 				if(comm.length != 3){
+ 					System.out.println("Invalid use! Must be 'removetext <id> <password>'!");
+ 					continue;
+ 				}
+ 				
+ 				removeText();
  			}
+ 		}
+ 	}
+ 	
+ 	static void removeText() throws IOException {
+ 		String responce = "";
+ 		toServer.println("frmtxt " + comm[1] + " " + comm[2]);
+ 		toServer.flush();
+ 		
+ 		responce = serverOutput.readLine();
+ 		
+ 		if(responce.equals("done")){
+ 			System.out.println("Text removed from server.");
+ 		} else if(responce.equals("notfound")){
+ 			System.out.println("Text id not found.");
+ 		} else if(responce.equals("passwrong")){
+ 			System.out.println("Text password invalid.");
+ 		} else {
+ 			System.out.println("Invalid server responce.");
  		}
  	}
  	
@@ -120,7 +145,7 @@
  	static void sendText() throws IOException {
  		int start = 3;
  		boolean tmp = false;
- 		if(comm[3].equalsIgnoreCase("-tmp")) {
+ 		if(comm[1].equalsIgnoreCase("-tmp")) {
  			tmp = true;
  			start = 4;
  			
@@ -132,11 +157,11 @@
  		
  		String txt = "";
 		for(int i = start; i < comm.length; i++) {
-			txt += comm[i];
+			txt += comm[i] + ((i == comm.length - 1) ? "" : " ");
 		}
  		
  		if(tmp) {
- 			toServer.println("fsendtmptxt " + comm[1] + " " + comm[2] + " " + txt);
+ 			toServer.println("fsendtmptxt " + comm[2] + " " + comm[3] + " " + txt);
  		} else {
  			toServer.println("fsendtxt " + comm[1] + " " + comm[2] + " " + txt);
  		}
