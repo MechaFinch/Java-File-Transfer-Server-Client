@@ -12,31 +12,32 @@ import java.util.ArrayList;
  	static int port;
  	static ArrayList<byte[]> databaseraw = new ArrayList<byte[]>();
  	static ArrayList<String[]> databasetext = new ArrayList<String[]>();
+ 	static ArrayList<Thread> connections = new ArrayList<Thread>();
+ 	static ServerSocket server;
+ 	
+ 	static Thread ConnectionListen;
+	
+	static Thread ConnectionEnd;
  	
  	public static void main(String[] args) throws IOException{
- 		port = AR.readIntRange(1024, 49151, "Please input the server port", "Please input a number.", "Port must be from 1024-49151", "Port must be from 1024-49151");
- 		
- 		ServerSocket server = new ServerSocket(port);
- 		
- 		System.out.println("Server successfully initiated on port " + port);
- 		
- 		Thread ConnectionListener = new Thread(){
- 			public void run(){
- 				while(true){
- 					try{
-			 			Socket client = server.accept();
-			 			
-			 			Runnable connection = new ConnectionHandler(client);
-			 			new Thread(connection).start();
-			 		} catch(IOException e){
-			 		}
-		 		}
- 			}
- 		};
+ 		initServer();
  		
  		Thread mon = new Thread(new ServerMonitor());
- 		ConnectionListener.start();
  		mon.start();
+ 	}
+ 	
+ 	static void initServer() throws IOException{
+ 		port = AR.readIntRange(1024, 49151, "Please input the server port", "Please input a number.", "Port must be from 1024-49151", "Port must be from 1024-49151");
+ 		
+ 		server = new ServerSocket(port);
+ 		
+ 		ConnectionListen = new Thread(new ConnectionListener());
+ 		ConnectionEnd = new Thread(new ConnectionEnder());
+ 		
+ 		ConnectionListen.start();
+ 		ConnectionEnd.start();
+ 		
+ 		System.out.println("Server successfully initiated on port " + port);
  	}
  }
  
@@ -247,56 +248,121 @@ import java.util.ArrayList;
  				} else {
  					System.out.println("Invalid section");
  				}
+ 			} else if(com[0].equalsIgnoreCase("shutdown")) {
+ 				if(com.length != 1) {
+ 					System.out.println("Invalid Use! Must be 'shutdown'!");
+ 					continue;
+ 				}
+ 				
+ 				System.exit(0);
+ 			} else if(com[0].equalsIgnoreCase("restart")) {
+ 				if(com.length != 1) {
+ 					System.out.println("Invalid Use! Must be 'restart'!");
+ 					continue;
+ 				}
+ 				
+ 				restartServer();
  			}
  		}
+ 	}
+ 	
+ 	void restartServer() {
+ 		for(Thread t : Server.connections) {
+ 			t.interrupt();
+ 		}
+ 		
+ 		Server.ConnectionListen.interrupt();
+ 		Server.ConnectionEnd.interrupt();
+ 		
+ 		Server.connections.clear();
+ 		Server.databaseraw.clear();
+ 		Server.databasetext.clear();
+ 		
+ 		try {
+ 			Server.server.close();
+			Server.initServer();
+		} catch (IOException e) {
+		}
  	}
  	
  	void showAllText(){
- 		ArrayList<String> tmp = new ArrayList<String>();
- 		ArrayList<String> per = new ArrayList<String>();
- 		
- 		for(int i = 0; i < Server.databasetext.size(); i++){
- 			String[] s = Server.databasetext.get(i);
- 			
- 			if(s[0].equals("tmptxt")){
- 				tmp.add(s[1]);
- 			} else {
- 				per.add(s[1]);
- 			}
- 		}
- 		
- 		System.out.println("Temporary Text IDs:");
- 		
- 		for(int i = 0; i < tmp.size(); i++){
- 			System.out.println(tmp.get(i));
- 		}
- 		
- 		System.out.println("Permanant Text IDs:");
- 		
- 		for(int i = 0; i < per.size(); i++){
- 			System.out.println(per.get(i));
- 		}
+ 		showTmpText();
+ 		showPerText();
  	}
  	
  	void showTmpText(){
- 		System.out.println("Temporary Text IDs:");
+ 		ArrayList<String> ids = new ArrayList<String>();
+ 		String[] s;
  		
- 		for(int i = 0; i < Server.databasetext.size(); i++){
- 			String[] s = Server.databasetext.get(i);
- 			if(s[0].equals("tmptxt")){
- 				System.out.println(s[1]);
+ 		for(int i = 0; i < Server.databasetext.size(); i++) {
+ 			s = Server.databasetext.get(i);
+ 			
+ 			if(s[0].equals("tmptxt")) {
+ 				ids.add(s[1]);
+ 			}
+ 		}
+ 		
+ 		if(ids.size() == 0) {
+ 			System.out.println("No temporary text found.");
+ 		} else {
+ 			System.out.println("Temporary text ids:");
+ 			for(int i = 0; i < ids.size(); i++) {
+ 				System.out.println(ids.get(i));
  			}
  		}
  	}
  	
  	void showPerText(){
- 		System.out.println("Permanant Text IDs:");
+ 		ArrayList<String> ids = new ArrayList<String>();
+ 		String[] s;
  		
- 		for(int i = 0; i < Server.databasetext.size(); i++){
- 			String[] s = Server.databasetext.get(i);
- 			if(s[0].equals("txt")){
- 				System.out.println(s[1]);
+ 		for(int i = 0; i < Server.databasetext.size(); i++) {
+ 			s = Server.databasetext.get(i);
+ 			
+ 			if(s[0].equals("txt")) {
+ 				ids.add(s[1]);
+ 			}
+ 		}
+ 		
+ 		if(ids.size() == 0) {
+ 			System.out.println("No permanant text found.");
+ 		} else {
+ 			System.out.println("Permanant text ids:");
+ 			for(int i = 0; i < ids.size(); i++) {
+ 				System.out.println(ids.get(i));
  			}
  		}
  	}
+ }
+ 
+ class ConnectionListener implements Runnable{
+	 public void run(){
+		while(true){
+			try{
+	 			Socket client = Server.server.accept();
+	 			
+	 			Runnable connection = new ConnectionHandler(client);
+	 			Server.connections.add(new Thread(connection));
+	 			Server.connections.get(Server.connections.size() - 1).start();
+	 		} catch(IOException e){
+	 		}
+ 		}
+	}
+ }
+ 
+ class ConnectionEnder implements Runnable{
+	 public void run() {
+		while(true) {
+			for(int i = Server.connections.size() - 1; i >= 0; i--) {
+				if(Server.connections.get(i).isAlive()) {
+					Server.connections.remove(i);
+				}
+			}
+			
+			try {
+				Thread.sleep(2000);
+			} catch (InterruptedException e) {
+			}
+		}
+	}
  }
