@@ -13,6 +13,8 @@ import java.util.ArrayList;
  	static ArrayList<byte[]> databaseraw = new ArrayList<byte[]>();
  	static ArrayList<String[]> databasetext = new ArrayList<String[]>();
  	static ArrayList<Thread> connections = new ArrayList<Thread>();
+ 	static ArrayList<InetAddress> ips = new ArrayList<InetAddress>();
+ 	static ArrayList<Integer> ports = new ArrayList<Integer>();
  	static ServerSocket server;
  	
  	static Thread ConnectionListen;
@@ -54,6 +56,9 @@ import java.util.ArrayList;
  		PrintWriter toClient = null;
  		InetAddress clientAddress = client.getInetAddress();
  		int clientPort = client.getPort();
+ 		
+ 		Server.ips.add(clientAddress);
+ 		Server.ports.add(clientPort);
  		
  		System.out.println("Recieving connection from " + clientAddress + " on port " + clientPort);
  		
@@ -248,6 +253,13 @@ import java.util.ArrayList;
  				} else {
  					System.out.println("Invalid section");
  				}
+ 			} else if(com[0].equalsIgnoreCase("listconnections")) {
+ 				if(com.length != 1) {
+ 					System.out.println("Invalid Use! Must be 'listconnections'!");
+ 					continue;
+ 				}
+ 				
+ 				listConnections();
  			} else if(com[0].equalsIgnoreCase("shutdown")) {
  				if(com.length != 1) {
  					System.out.println("Invalid Use! Must be 'shutdown'!");
@@ -263,6 +275,17 @@ import java.util.ArrayList;
  				
  				restartServer();
  			}
+ 		}
+ 	}
+ 	
+ 	void listConnections() {
+ 		if(Server.connections.size() == 0) {
+ 			System.out.println("No connections.");
+ 		} else {
+ 			System.out.println("Connections:");
+ 	 		for(int i = 0; i < Server.connections.size(); i++) {
+ 	 			System.out.println("IP " + Server.ips.get(i) + " on port " + Server.ports.get(i));
+ 	 		}
  		}
  	}
  	
@@ -354,8 +377,10 @@ import java.util.ArrayList;
 	 public void run() {
 		while(true) {
 			for(int i = Server.connections.size() - 1; i >= 0; i--) {
-				if(Server.connections.get(i).isAlive()) {
+				if(!Server.connections.get(i).isAlive()) {
 					Server.connections.remove(i);
+					Server.ips.remove(i);
+					Server.ports.remove(i);
 				}
 			}
 			
