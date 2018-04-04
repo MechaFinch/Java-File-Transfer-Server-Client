@@ -10,7 +10,7 @@ import java.util.ArrayList;
  
  public class Server{
  	static int port;
- 	static ArrayList<byte[]> databaseraw = new ArrayList<byte[]>();
+ 	static ArrayList<FileEntry> databaseraw = new ArrayList<FileEntry>();
  	static ArrayList<String[]> databasetext = new ArrayList<String[]>();
  	static ArrayList<Thread> connections = new ArrayList<Thread>();
  	static ArrayList<InetAddress> ips = new ArrayList<InetAddress>();
@@ -29,7 +29,11 @@ import java.util.ArrayList;
  	}
  	
  	static void initServer() throws IOException{
- 		port = AR.readIntRange(1024, 49151, "Please input the server port", "Please input a number.", "Port must be from 1024-49151", "Port must be from 1024-49151");
+ 		if(AR.readBooleanCI("Would you like to use a custom or default port?", new String[] {"custom"}, new String[] {"default"}, "Please input either 'default' or 'custom'")) {
+ 			port = AR.readIntRange(1024, 49151, "Please input the server port", "Please input a number.", "Port must be from 1024-49151", "Port must be from 1024-49151");
+ 		} else {
+ 			port = 48293;
+ 		}
  		
  		server = new ServerSocket(port);
  		
@@ -73,8 +77,14 @@ import java.util.ArrayList;
  		//Verify connection handshake
  		try {
  			System.out.println("Verifying proper connection with client at " + clientAddress + " on port " + clientPort);
- 			if(!clientOutput.readLine().equals("verifyConnection")) {
- 	 			System.out.println("Client at " + clientAddress + " on port " + clientPort + " tried to connect with invalid handshake.");
+ 			String verf = clientOutput.readLine();
+ 			if(!verf.equals("verifyConnection")) {
+ 	 			if(verf.equals("testfor")) {
+ 	 				System.out.println("Client at " + clientAddress + " on port " + clientPort + " was a server search.");
+ 	 			} else {
+ 	 				System.out.println("Client at " + clientAddress + " on port " + clientPort + " tried to connect with invalid handshake.");
+ 	 			}
+ 	 			
  	 			return;
  	 		} else {
  	 			toClient.println("connectionVerify");
@@ -206,6 +216,21 @@ import java.util.ArrayList;
  					toClient.println("fdone");
  					toClient.flush();
  					System.out.println("The text requested for removal by the client at " + clientAddress + " on port " + clientPort + " had been removed.");
+ 				} else if(input[0].equals("sendfile")) {
+ 					int datalength = Integer.parseInt(input[1]);
+ 					
+ 					toClient.println("fready");
+ 					
+ 					DataInputStream dis = new DataInputStream(client.getInputStream());
+ 					
+ 					byte[] data = new byte[datalength];
+ 					dis.readFully(data, 0, datalength);
+ 					
+ 					FileEntry fe = new FileEntry(input[1], input[2], data);
+ 					
+ 					Server.databaseraw.add(fe);
+ 					
+ 					toClient.println("fdone");
  				}
  			}
  		} catch(IOException e) {
@@ -229,6 +254,18 @@ import java.util.ArrayList;
  	}
  }
  
+ class FileEntry {
+	 String id;
+	 String pass;
+	 byte[] data;
+	 
+	 FileEntry(String id, String pass, byte[] data){
+		 this.id = id;
+		 this.pass = pass;
+		 this.data = data;
+	 }
+ }
+ 
  class ServerMonitor implements Runnable{
  	ServerMonitor(){
  	}
@@ -240,7 +277,7 @@ import java.util.ArrayList;
  			
  			if(com[0].equalsIgnoreCase("listtext")){
  				if(com.length != 2){
- 					System.out.println("Invalid Use! Must be 'listtext <[all, tmp, per]>'!");
+ 					System.out.println("Invalid Use! Must be 'listtext [all, tmp, per]'!");
  					continue;
  				}
  				
