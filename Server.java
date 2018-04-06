@@ -289,6 +289,8 @@ import java.util.ArrayList;
  					DataOutputStream dos = new DataOutputStream(client.getOutputStream());
  			 		dos.write(fe.data);
  			 		dos.flush();
+ 			 		
+ 			 		if(fe.tmp) Server.databaseraw.remove(id);
  					
  					clientOutput.readLine();
  					System.out.println("The client at " + clientAddress + " on port " + clientPort + " has recieved their requested file.");
