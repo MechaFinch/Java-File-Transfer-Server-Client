@@ -25,17 +25,21 @@ import java.nio.file.Paths;
  					if(connected) {
  						try {
 							if(serverOutput.read() == -1) {
+								if(connected) {
+									System.out.println("The connection to the server has been lost.");
+									connected = false;
+								}
+							}
+						} catch (IOException e) {
+							if(connected) {
 								System.out.println("The connection to the server has been lost.");
 								connected = false;
 							}
-						} catch (IOException e) {
-							System.out.println("The connection to the server has been lost.");
-							connected = false;
 						}
  					}
  					
  					try {
-						Thread.sleep(300);
+						Thread.sleep(500);
 					} catch (InterruptedException e) {
 					}
  				}
@@ -48,143 +52,254 @@ import java.nio.file.Paths;
  			//Parse
  			comm = input.split(" ");
  			
- 			if(comm[0].equalsIgnoreCase("connect")){
- 				if(comm.length != 3){
- 					System.out.println("Invalid Use! Must be 'connect <ip> [<port>, default]'!");
- 					continue;
- 				}
- 				try{
- 					if(connected) {
- 						System.out.println("Please disconnect from current server before connecting to another.");
- 					} else {
- 						connect();
- 					}
- 				} catch(UnknownHostException e){
- 					System.out.println("Unknown Host");
- 				}
- 			} else if(comm[0].equalsIgnoreCase("disconnect")) {
- 				if(comm.length != 1) {
- 					System.out.println("Invalid Use! Must only be 'disconnect'!");
- 					continue;
- 				}
- 				
-				disconnect();
- 			} else if(comm[0].equalsIgnoreCase("sendtext")) {
- 				if(comm.length == 3) {
- 					System.out.println("Cannot send text. No text to send.");
- 					continue;
- 				} else if(!connected) {
- 					System.out.println("Cannot send text. Not connected to server.");
- 					continue;
- 				} else if(comm.length < 4) {
- 					System.out.println("Invalid Use! Must be 'sendtext [-tmp] <id> <password> <text>'!");
- 					continue;
- 				}
- 				
- 				sendText();
- 			} else if(comm[0].equalsIgnoreCase("downloadtext")) {
- 				if(comm.length != 3) {
- 					System.out.println("Invalid Use! Must be 'downloadtext <id> <password>'!");
- 					continue;
- 				}
- 				
- 				downloadText();
- 			} else if(comm[0].equalsIgnoreCase("removetext")){
- 				if(comm.length != 3){
- 					System.out.println("Invalid Use! Must be 'removetext <id> <password>'!");
- 					continue;
- 				}
- 				
- 				removeText();
- 			} else if(comm[0].equalsIgnoreCase("shutdown")) {
- 				if(comm.length != 1) {
- 					System.out.println("Invalid Use! Must be 'shutdown'!");
- 					continue;
- 				}
- 				
- 				System.exit(0);
- 			} else if(comm[0].equalsIgnoreCase("findips")) {
- 				if(comm.length != 2) {
- 					System.out.println("Invalid Use! Must be 'findips [all, server]'!");
- 					continue;
- 				}
- 				
- 				if(comm[1].equalsIgnoreCase("all")) {
- 					findAllIps();
- 				} else if(comm[1].equalsIgnoreCase("server")) {
- 					if(connected) {
- 						System.out.println("Please disconnect before trying to find servers.");
- 						continue;
- 					}
- 					
- 					findServerIps();
- 				} else {
- 					System.out.println("Invalid Use! Must be 'findips [all, server]'!");
- 				}
- 			} else if(comm[0].equalsIgnoreCase("sendfile")) {
- 				if(comm.length == 4) {
- 					sendFile(false);
- 				} else if(comm.length == 5 && comm[1].equalsIgnoreCase("-abs")) {
- 					sendFile(true);
- 				} else {
- 					System.out.println("Invalid Use! Must be 'sendfile [-abs] <filename/path> <id> <password>'!");
- 					continue;
- 				}
- 			} else if(comm[0].equalsIgnoreCase("selectdir")) {
- 				if(comm.length == 2) {
- 					selectDir(true);
- 				} else if(comm.length == 3 && comm[1].equalsIgnoreCase("-prev")) {
- 					selectDir(false);
- 				} else {
- 					System.out.println("Invalid Use! Must be 'selectdir [-prev] <directory>'!");
- 					continue;
- 				}
- 			} else if(comm[0].equalsIgnoreCase("downloadfile")) {
- 				if(comm.length == 4) {
- 					downloadFile(false);
- 				} else if(comm.length == 5 && comm[1].equalsIgnoreCase("-abs")) {
- 					downloadFile(true);
- 				} else {
- 					System.out.println("Invalid Use! Must be 'downloadfile [-abs] <filename/path> <id> <password>'!");
- 					continue;
+ 			try {
+	 			if(comm[0].equalsIgnoreCase("connect")){
+	 				if(comm.length != 3){
+	 					System.out.println("Invalid Use! Must be 'connect <ip> [<port>, default]'!");
+	 					continue;
+	 				}
+	 				try{
+	 					if(connected) {
+	 						System.out.println("Please disconnect from current server before connecting to another.");
+	 					} else {
+	 						connect();
+	 					}
+	 				} catch(UnknownHostException e){
+	 					System.out.println("Unknown Host");
+	 				}
+	 			} else if(comm[0].equalsIgnoreCase("disconnect")) {
+	 				if(comm.length != 1) {
+	 					System.out.println("Invalid Use! Must only be 'disconnect'!");
+	 					continue;
+	 				}
+	 				
+					disconnect();
+	 			} else if(comm[0].equalsIgnoreCase("sendtext")) {
+	 				if(comm.length == 3) {
+	 					System.out.println("Cannot send text. No text to send.");
+	 					continue;
+	 				} else if(!connected) {
+	 					System.out.println("Cannot send text. Not connected to server.");
+	 					continue;
+	 				} else if(comm.length < 4) {
+	 					System.out.println("Invalid Use! Must be 'sendtext [-tmp] <id> <password> <text>'!");
+	 					continue;
+	 				}
+	 				
+	 				sendText();
+	 			} else if(comm[0].equalsIgnoreCase("downloadtext")) {
+	 				if(comm.length != 3) {
+	 					System.out.println("Invalid Use! Must be 'downloadtext <id> <password>'!");
+	 					continue;
+	 				}
+	 				
+	 				downloadText();
+	 			} else if(comm[0].equalsIgnoreCase("removetext")){
+	 				if(comm.length != 3){
+	 					System.out.println("Invalid Use! Must be 'removetext <id> <password>'!");
+	 					continue;
+	 				}
+	 				
+	 				removeText();
+	 			} else if(comm[0].equalsIgnoreCase("shutdown")) {
+	 				if(comm.length != 1) {
+	 					System.out.println("Invalid Use! Must be 'shutdown'!");
+	 					continue;
+	 				}
+	 				
+	 				System.exit(0);
+	 			} else if(comm[0].equalsIgnoreCase("findips")) {
+	 				if(comm.length != 2) {
+	 					System.out.println("Invalid Use! Must be 'findips [all, server]'!");
+	 					continue;
+	 				}
+	 				
+	 				if(comm[1].equalsIgnoreCase("all")) {
+	 					findAllIps();
+	 				} else if(comm[1].equalsIgnoreCase("server")) {
+	 					if(connected) {
+	 						System.out.println("Please disconnect before trying to find servers.");
+	 						continue;
+	 					}
+	 					
+	 					findServerIps();
+	 				} else {
+	 					System.out.println("Invalid Use! Must be 'findips [all, server]'!");
+	 				}
+	 			} else if(comm[0].equalsIgnoreCase("sendfile")) {
+	 				if(comm.length < 4) {
+	 					System.out.println("Invalid Use! Must be 'sendfile [-abs, -tmp] <id> <password> <filename/path>'!");
+	 					continue;
+	 				}
+	 				if(comm[1].equalsIgnoreCase("-abs")) {
+	 					if(comm[2].equalsIgnoreCase("-tmp")) {
+	 						sendFile(true, true);
+	 					} else if(comm[2].charAt(0) == '-') {
+	 						System.out.println("Invalid Use! Must be 'sendfile [-abs, -tmp] <id> <password> <filename/path>'!");
+	 	 					continue;
+	 					} else {
+	 						sendFile(true, false);
+	 					}
+	 				} else if(comm[1].equalsIgnoreCase("-tmp")) {
+	 					if(comm[2].equalsIgnoreCase("-abs")) {
+	 						sendFile(true, true);
+	 					} else if(comm[2].charAt(0) == '-') {
+	 						System.out.println("Invalid Use! Must be 'sendfile [-abs, -tmp] <id> <password> <filename/path>'!");
+	 	 					continue;
+	 					} else {
+	 						sendFile(false, true);
+	 					}
+	 				} else if(comm[1].charAt(0) == '-') {
+	 					System.out.println("Invalid Use! Must be 'sendfile [-abs, -tmp] <id> <password> <filename/path>'!");
+	 					continue;
+	 				} else {
+	 					sendFile(false, false);
+	 				}
+	 			} else if(comm[0].equalsIgnoreCase("selectdir")) {
+	 				if(comm.length < 2) {
+	 					System.out.println("Invalid Use! Must be 'selectdir [-prev] <directory>'!");
+	 					continue;
+	 				}
+	 				if(comm[1].equalsIgnoreCase("-prev")) {
+	 					selectDir(false);
+	 				} else if(comm[1].charAt(0) == '-') {
+	 					System.out.println("Invalid Use! Must be 'selectdir [-prev] <directory>'!");
+	 					continue;
+	 				} else {
+	 					selectDir(true);
+	 				}
+	 			} else if(comm[0].equalsIgnoreCase("downloadfile")) {
+	 				if(comm.length < 4) {
+	 					System.out.println("Invalid Use! Must be 'downloadfile [-abs] <id> <password> <filename/path>'!");
+	 					continue;
+	 				}
+	 				if(comm[1].equalsIgnoreCase("-abs")) {
+	 					if(comm.length < 5) {
+	 						System.out.println("Invalid Use! Must be 'downloadfile [-abs] <id> <password> <filename/path>'!");
+	 						continue;
+	 					}
+	 					
+	 					downloadFile(true);
+	 				} else if(comm[1].charAt(0) == '-') {
+	 					System.out.println("Invalid Use! Must be 'downloadfile [-abs] <id> <password> <filename/path>'!");
+	 					continue;
+	 				} else {
+	 					downloadFile(false);
+	 				}
+	 			}
+ 			} catch(SocketException e) {
+ 				if(!e.getMessage().equalsIgnoreCase("Connection reset")) {
+ 					throw e;
  				}
  			}
  		}
  	}
  	
- 	static void downloadFile(boolean absPath) {
+ 	static void downloadFile(boolean absPath) throws IOException {
  		String fp = "";
- 		if(absPath) {
- 			fp = comm[1];
- 		} else {
- 			fp = comm[2];
+ 		String path = "";
+ 		
+ 		for(int i = (absPath ? 4 : 3); i < comm.length; i++) {
+ 			path += comm[i] + (i == comm.length - 1 ? "" : " ");
  		}
+ 		
+ 		if(absPath) {
+ 			fp = path;
+ 		} else {
+ 			fp = filePath + path;
+ 		}
+ 		System.out.println(fp);
+ 		
+ 		File write = new File(fp);
+ 		
+ 		System.out.println("Requesting file");
+ 		toServer.println("fdownfile " + (!absPath ? (comm[1] + " " + comm[2]) : (comm[2] + " " + comm[3])));
+ 		
+ 		String responcer = serverOutput.readLine();
+ 		String[] responces = responcer.split(" ");
+ 		
+ 		if(!responces[0].equals("sending")) {
+ 			if(responces[0].equals("notfound")) {
+ 				System.out.println("File download failed - File id not found.");
+ 			} else if(responces[0].equals("passwrong")) {
+ 				System.out.println("File download failed - File password incorrect.");
+ 			} else {
+ 				System.out.println("File download failed - Invalid server responce.");
+ 			}
+ 			
+ 			return;
+ 		}
+ 		
+ 		System.out.println("Downloading file");
+ 		DataInputStream dis = new DataInputStream(server.getInputStream());
+ 		int length = Integer.parseInt(responces[1]);
+ 		byte[] data = new byte[length];
+ 		dis.readFully(data, 0, length);
+ 		
+ 		writeFile(write, data);
+ 		
+ 		System.out.println("File downloaded successfullly to " + fp + ".");
+ 		
+ 		toServer.println("reset");
  	}
  	
  	static void selectDir(boolean absPath) {
- 		if(absPath) {
- 			filePath = comm[1];
- 		} else {
- 			filePath = filePath + comm[2];
+ 		String path = "";
+ 		
+ 		for(int i = (absPath ? 1 : 2); i < comm.length; i++) {
+ 			path += comm[i] + (i == comm.length - 1 ? (comm[i].contains(".") || comm[i].charAt(comm[i].length() - 1) == '\\' || comm[i].charAt(comm[i].length() - 1) == '/' ? "" : "\\") : " ");
  		}
+ 		
+ 		if(absPath) {
+ 			filePath = path;
+ 		} else {
+ 			filePath = filePath + path;
+ 		}
+ 		
+ 		System.out.println("File selected: " + filePath);
  	}
  	
- 	static void sendFile(boolean absPath) throws IOException {
+ 	static void sendFile(boolean absPath, boolean tmp) throws IOException {
  		String fp = "";
- 		if(absPath) {
- 			fp = comm[2];
+ 		String idpass = "";
+ 		
+ 		if(absPath && tmp) {
+ 			idpass = comm[3] + " " + comm[4];
+ 			fp = filePath;
+ 			for(int i = 5; i < comm.length; i++) {
+ 				fp += comm[i] + (i == comm.length - 1 ? "" : " ");
+ 			}
+ 		} else if(absPath) {
+ 			idpass = comm[2] + " " + comm[3];
+ 			for(int i = 4; i < comm.length; i++) {
+ 				fp += comm[i] + (i == comm.length - 1 ? "" : " ");
+ 			}
+ 		} else if(tmp) {
+ 			fp = filePath;
+ 			idpass = comm[2] + " " + comm[3];
+ 			for(int i = 4; i < comm.length; i++) {
+ 				fp += comm[i] + (i == comm.length - 1 ? "" : " ");
+ 			}
  		} else {
- 			fp = filePath + comm[1];
+ 			fp = filePath;
+ 			idpass = comm[1] + " " + comm[2];
+ 			for(int i = 3; i < comm.length; i++) {
+ 				fp += comm[i] + (i == comm.length - 1 ? "" : " ");
+ 			}
  		}
  		
  		File read = new File(fp);
+ 		if(!read.exists()) {
+ 			System.out.println("File to send does not exist.");
+ 			return;
+ 		}
  		byte[] data = readFile(read);
  		
- 		toServer.println("fsendfile " + (!absPath ? comm[2] : comm[3]) + (!absPath ? comm[3] : comm[4]) + data.length);
+ 		toServer.println((tmp ? "fsendtmpfile " : "fsendfile ") + idpass + " " + data.length);
  		
  		String responce = serverOutput.readLine();
  		if(!responce.equals("ready")) {
- 			System.out.println("File sending failed. Server didn't recieve file sending request.");
+ 			System.out.println("File sending failed - Server didn't recieve file sending request.");
  			return;
  		}
  		
@@ -192,10 +307,16 @@ import java.nio.file.Paths;
  		dos.write(data);
  		dos.flush();
  		
+ 		while(!serverOutput.ready());
  		responce = serverOutput.readLine();
  		if(responce.equals("done")) {
  			System.out.println("File sent successfully");
+ 		} else {
+ 			System.out.println("File sending failed - Invalid server responce.");
  		}
+ 		
+ 		toServer.println("reset");
+ 		toServer.flush();
  	}
  	
  	static void findServerIps() throws IOException {
@@ -248,11 +369,11 @@ import java.nio.file.Paths;
  		if(responce.equals("done")){
  			System.out.println("Text removed from server.");
  		} else if(responce.equals("notfound")){
- 			System.out.println("Text id not found.");
+ 			System.out.println("Text removal failed - Text id not found.");
  		} else if(responce.equals("passwrong")){
- 			System.out.println("Text password invalid.");
+ 			System.out.println("Text removal failed - Text password invalid.");
  		} else {
- 			System.out.println("Invalid server responce.");
+ 			System.out.println("Text removal failed - Invalid server responce.");
  		}
  	}
  	
@@ -268,13 +389,13 @@ import java.nio.file.Paths;
  		if(responce.equals("found")) {
  			System.out.println("Text requested successfully.");
  		} else if(responce.equals("notfound")) {
- 			System.out.println("Text id not found.");
+ 			System.out.println("Text download failed - Text id not found.");
  			return;
  		} else if(responce.equals("passwrong")) {
- 			System.out.println("Text password invalid.");
+ 			System.out.println("Text download failed - Text password incorrect.");
  			return;
  		} else {
- 			System.out.println("Invalid server responce.");
+ 			System.out.println("Text download failed - Invalid server responce.");
  			return;
  		}
  		
