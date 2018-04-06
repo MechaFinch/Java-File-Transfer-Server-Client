@@ -15,3 +15,5 @@ Future features:
 -Text/files encrypted before being sent (password acts as key?)  
 -Deleting files from server  
 -Maybe other stuff  
+  
+FYI 'AR.java' is my command line reader library I made as a better version of the school supplied one
