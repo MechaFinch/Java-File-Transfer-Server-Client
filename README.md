@@ -1,4 +1,4 @@
-# JavaFileTransferServer/Client
+# Java File Transfer Server/Client
 
 A (fairly) simple client and server mostly for sending/recieving files from one computer to another.  
   
