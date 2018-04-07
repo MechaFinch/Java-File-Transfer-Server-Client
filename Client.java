@@ -55,7 +55,7 @@ import java.nio.file.Paths;
  			try {
 	 			if(comm[0].equalsIgnoreCase("connect")){
 	 				if(comm.length != 3){
-	 					System.out.println("Invalid Use! Must be 'connect <ip> [<port>, default]'!");
+	 					System.out.println("Invalid Use! Must be 'connect <ip> (<port> | default)'!");
 	 					continue;
 	 				}
 	 				try{
@@ -69,7 +69,7 @@ import java.nio.file.Paths;
 	 				}
 	 			} else if(comm[0].equalsIgnoreCase("disconnect")) {
 	 				if(comm.length != 1) {
-	 					System.out.println("Invalid Use! Must only be 'disconnect'!");
+	 					System.out.println("Invalid Use! Must be 'disconnect'!");
 	 					continue;
 	 				}
 	 				
@@ -82,7 +82,7 @@ import java.nio.file.Paths;
 	 					System.out.println("Cannot send text. Not connected to server.");
 	 					continue;
 	 				} else if(comm.length < 4) {
-	 					System.out.println("Invalid Use! Must be 'sendtext [-tmp] <id> <password> <text>'!");
+	 					System.out.println("Invalid Use! Must be 'sendtext [-tmp] <id> <password> <text>...'!");
 	 					continue;
 	 				}
 	 				
@@ -110,7 +110,7 @@ import java.nio.file.Paths;
 	 				System.exit(0);
 	 			} else if(comm[0].equalsIgnoreCase("findips")) {
 	 				if(comm.length != 2) {
-	 					System.out.println("Invalid Use! Must be 'findips [all, server]'!");
+	 					System.out.println("Invalid Use! Must be 'findips (all | server)'!");
 	 					continue;
 	 				}
 	 				
@@ -124,18 +124,18 @@ import java.nio.file.Paths;
 	 					
 	 					findServerIps();
 	 				} else {
-	 					System.out.println("Invalid Use! Must be 'findips [all, server]'!");
+	 					System.out.println("Invalid Use! Must be 'findips (all | server)'!");
 	 				}
 	 			} else if(comm[0].equalsIgnoreCase("sendfile")) {
 	 				if(comm.length < 4) {
-	 					System.out.println("Invalid Use! Must be 'sendfile [-abs, -tmp] <id> <password> <filename/path>'!");
+	 					System.out.println("Invalid Use! Must be 'sendfile [-abs -tmp] <id> <password> <filename/path>'!");
 	 					continue;
 	 				}
 	 				if(comm[1].equalsIgnoreCase("-abs")) {
 	 					if(comm[2].equalsIgnoreCase("-tmp")) {
 	 						sendFile(true, true);
 	 					} else if(comm[2].charAt(0) == '-') {
-	 						System.out.println("Invalid Use! Must be 'sendfile [-abs, -tmp] <id> <password> <filename/path>'!");
+	 						System.out.println("Invalid Use! Must be 'sendfile [-abs  -tmp] <id> <password> <filename/path>'!");
 	 	 					continue;
 	 					} else {
 	 						sendFile(true, false);
@@ -144,26 +144,26 @@ import java.nio.file.Paths;
 	 					if(comm[2].equalsIgnoreCase("-abs")) {
 	 						sendFile(true, true);
 	 					} else if(comm[2].charAt(0) == '-') {
-	 						System.out.println("Invalid Use! Must be 'sendfile [-abs, -tmp] <id> <password> <filename/path>'!");
+	 						System.out.println("Invalid Use! Must be 'sendfile [-abs -tmp] <id> <password> <filename/path>'!");
 	 	 					continue;
 	 					} else {
 	 						sendFile(false, true);
 	 					}
 	 				} else if(comm[1].charAt(0) == '-') {
-	 					System.out.println("Invalid Use! Must be 'sendfile [-abs, -tmp] <id> <password> <filename/path>'!");
+	 					System.out.println("Invalid Use! Must be 'sendfile [-abs -tmp] <id> <password> <filename/path>'!");
 	 					continue;
 	 				} else {
 	 					sendFile(false, false);
 	 				}
 	 			} else if(comm[0].equalsIgnoreCase("selectdir")) {
 	 				if(comm.length < 2) {
-	 					System.out.println("Invalid Use! Must be 'selectdir [-prev] <directory>'!");
+	 					System.out.println("Invalid Use! Must be 'selectdir [-prev] <directory>...'!");
 	 					continue;
 	 				}
 	 				if(comm[1].equalsIgnoreCase("-prev")) {
 	 					selectDir(false);
 	 				} else if(comm[1].charAt(0) == '-') {
-	 					System.out.println("Invalid Use! Must be 'selectdir [-prev] <directory>'!");
+	 					System.out.println("Invalid Use! Must be 'selectdir [-prev] <directory>...'!");
 	 					continue;
 	 				} else {
 	 					selectDir(true);
@@ -186,12 +186,36 @@ import java.nio.file.Paths;
 	 				} else {
 	 					downloadFile(false);
 	 				}
+	 			} else if(comm[0].equalsIgnoreCase("removefile")) {
+	 				if(comm.length != 3) {
+	 					System.out.println("Invalid Use! Must be 'removefile <id> <password>'!");
+	 					continue;
+	 				}
+	 				
+	 				removeFile();
 	 			}
  			} catch(SocketException e) {
  				if(!e.getMessage().equalsIgnoreCase("Connection reset")) {
  					throw e;
  				}
  			}
+ 		}
+ 	}
+ 	
+ 	static void removeFile() throws IOException {
+ 		toServer.println("frmfile " + comm[1] + " " + comm[2]);
+ 		toServer.flush();
+ 		
+ 		String responce = serverOutput.readLine();
+ 		
+ 		if(responce.equals("done")) {
+ 			System.out.println("File removed successfully.");
+ 		} else if(responce.equals("notfound")) {
+ 			System.out.println("File ID not found.");
+ 		} else if(responce.equals("passwrong")) {
+ 			System.out.println("File password incorrect.");
+ 		} else {
+ 			System.out.println("Invalid server responce.");
  		}
  	}
  	
@@ -212,7 +236,6 @@ import java.nio.file.Paths;
  		
  		File write = new File(fp);
  		
- 		System.out.println("Requesting file");
  		toServer.println("fdownfile " + (!absPath ? (comm[1] + " " + comm[2]) : (comm[2] + " " + comm[3])));
  		
  		String responcer = serverOutput.readLine();
@@ -220,11 +243,11 @@ import java.nio.file.Paths;
  		
  		if(!responces[0].equals("sending")) {
  			if(responces[0].equals("notfound")) {
- 				System.out.println("File download failed - File id not found.");
+ 				System.out.println("File ID not found.");
  			} else if(responces[0].equals("passwrong")) {
- 				System.out.println("File download failed - File password incorrect.");
+ 				System.out.println("File password incorrect.");
  			} else {
- 				System.out.println("File download failed - Invalid server responce.");
+ 				System.out.println("Invalid server responce.");
  			}
  			
  			return;

@@ -264,6 +264,7 @@ import java.util.ArrayList;
  						if(fe.id.equals(input[1])) {
  							if(fe.pass.equals(input[2])) {
  								id = i;
+ 								break;
  							} else {
  								toClient.println("fpasswrong");
  								toClient.flush();
@@ -294,6 +295,43 @@ import java.util.ArrayList;
  					
  					clientOutput.readLine();
  					System.out.println("The client at " + clientAddress + " on port " + clientPort + " has recieved their requested file.");
+ 				} else if(input[0].equals("rmfile")) {
+ 					System.out.println("The client at " + clientAddress + " on port " + clientPort + " has requested to remove file ID " + input[1]);
+ 					FileEntry fe;
+ 					boolean p = true;
+ 					int id = -1;
+ 					
+ 					for(int i = 0; i < Server.databaseraw.size(); i++) {
+ 						fe = Server.databaseraw.get(i);
+ 						
+ 						if(fe.id.equals(input[1])) {
+ 							if(fe.pass.equals(input[2])) {
+ 								id = i;
+ 								break;
+ 							} else {
+ 								toClient.println("fpasswrong");
+ 								toClient.flush();
+ 								System.out.println("The file requested for removal by the client at " + clientAddress + " on port " + clientPort + " could not be removed because the password was incorrect.");
+ 								p = false;
+ 							}
+ 							break;
+ 						}
+ 					}
+ 					
+ 					if(!p) continue;
+ 					
+ 					if(id == -1) {
+ 						toClient.println("fnotfound");
+ 						toClient.flush();
+ 						System.out.println("The file requested for removal by the client at " + clientAddress + " on port " + clientPort + " could not be found.");
+ 						continue;
+ 					}
+ 					
+ 					Server.databaseraw.remove(id);
+ 					
+ 					toClient.println("fdone");
+ 					toClient.flush();
+ 					System.out.println("The file requested for removal by the client at " + clientAddress + " on port " + clientPort + " had been removed.");
  				} else {
  					System.out.println(inputRaw);
  				}
@@ -352,7 +390,7 @@ import java.util.ArrayList;
  			
  			if(com[0].equalsIgnoreCase("listtext")){
  				if(com.length != 2){
- 					System.out.println("Invalid Use! Must be 'listtext [all, tmp, per]'!");
+ 					System.out.println("Invalid Use! Must be 'listtext (all | tmp | per)'!");
  					continue;
  				}
  				
