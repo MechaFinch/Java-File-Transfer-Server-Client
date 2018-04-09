@@ -29,14 +29,6 @@ import java.util.ArrayList;
  	}
  	
  	static void initServer() throws IOException{
- 		/*
- 		if(AR.readBooleanCI("Would you like to use a custom or default port?", new String[] {"custom"}, new String[] {"default"}, "Please input either 'default' or 'custom'")) {
- 			port = AR.readIntRange(1024, 49151, "Please input the server port", "Please input a number.", "Port must be from 1024-49151", "Port must be from 1024-49151");
- 		} else {
- 			port = 48293;
- 		}
- 		*/
- 		
  		while(true) {
  			String initin = AR.readString("Please input the port, or 'default'.", "Please input a port.");
  			
@@ -332,6 +324,50 @@ import java.util.ArrayList;
  					toClient.println("fdone");
  					toClient.flush();
  					System.out.println("The file requested for removal by the client at " + clientAddress + " on port " + clientPort + " had been removed.");
+ 				} else if(input[0].equals("lsttxt")){
+ 					if(input[1].equals("all")){
+ 						System.out.println("The client at " + clientAddress + " on port " + clientPort + " has requested all text IDs.");
+ 						
+ 						ArrayList<String> tmpIDs = new ArrayList<String>();
+ 						ArrayList<String> permIDs = new ArrayList<String>();
+ 						
+ 						for(int i = 0; i < Server.databasetext.size(); i++){
+ 							String[] s = Server.databasetext.get(i);
+ 							
+ 							if(s[0].equals("tmptxt")){
+ 								tmpIDs.add(s[1]);
+ 							} else {
+ 								permIDs.add(s[1]);
+ 							}
+ 						}
+ 						
+ 						toClient.println("ftmpl " + tmpIDs.size());
+ 						toClient.flush();
+ 						
+ 						for(int i = 0; i < tmpIDs.size(); i++){
+ 							toClient.println("f" + tmpIDs.get(i));
+ 							toClient.flush();
+ 						}
+ 						
+ 						toClient.println("fperml " + permIDs.size());
+ 						toClient.flush();
+ 						
+ 						for(int i = 0; i < permIDs.size(); i++){
+ 							toClient.println("f" + permIDs.get(i));
+ 							toClient.flush();
+ 						}
+ 						
+ 						toClient.println("fdone");
+ 						toClient.flush();
+ 					} else if(input[1].equals("tmp")){
+ 						System.out.println("The client at " + clientAddress + " on port " + clientPort + " has requested temporary text IDs.");
+ 						
+ 					} else if(input[1].equals("per")){
+ 						System.out.println("The client at " + clientAddress + " on port " + clientPort + " has requested permanant text IDs.");
+ 						
+ 					} else {
+ 						System.out.println("The client at " + clientAddress + " on port " + clientPort + " has requested text ids ivalidly.");
+ 					}
  				} else {
  					System.out.println(inputRaw);
  				}

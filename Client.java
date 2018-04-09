@@ -193,12 +193,49 @@ import java.nio.file.Paths;
 	 				}
 	 				
 	 				removeFile();
+	 			} else if(comm[0].equalsIgnoreCase("listtext")){
+	 				if(comm.length != 2){
+	 					System.out.println("Invalid Use! Must be 'listtext (all | tmp | per)'!");
+	 					continue;
+	 				}
+	 				
+	 				listtext();
 	 			}
  			} catch(SocketException e) {
  				if(!e.getMessage().equalsIgnoreCase("Connection reset")) {
  					throw e;
  				}
  			}
+ 		}
+ 	}
+ 	
+ 	static void listtext() throws IOException {
+ 		if(comm[1].equalsIgnoreCase("all"){
+ 			toServer.println("flsttxt all");
+ 			toServer.flush();
+ 			
+ 			String sr = serverOutput.readLine();
+ 			String[] s = sr.split(" ");
+ 			
+ 			if(!s[0].equals("tmpl")){
+ 				System.out.println("Could not get text ids - Invalid server responce.");
+ 				return;
+ 			}
+ 			
+ 			String[] tmpIDs;
+ 			String[] premIDs;
+ 			
+ 			try{
+ 				tmpIDs = new String[Integer.parseInt(s[1])];
+ 			} catch(NumberFormatException e){
+ 				System.out.println("Could not get text ids - Invalid server responce.");
+ 			}
+ 		} else if(comm[1].equalsIgnoreCase("tmp"){
+ 			
+ 		} else if(comm[1].equalsIgnoreCase("per"){
+ 			
+ 		} else {
+ 			System.out.println("Invalid Use! Must be 'listtext (all | tmp | per)'!");
  		}
  	}
  	
