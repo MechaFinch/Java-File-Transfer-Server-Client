@@ -210,29 +210,72 @@ import java.nio.file.Paths;
  	}
  	
  	static void listtext() throws IOException {
- 		if(comm[1].equalsIgnoreCase("all"){
- 			toServer.println("flsttxt all");
+ 		if(comm[1].equalsIgnoreCase("all")){
+ 			toServer.println("lsttxt all");
  			toServer.flush();
  			
+ 			while(!serverOutput.ready());
  			String sr = serverOutput.readLine();
  			String[] s = sr.split(" ");
  			
  			if(!s[0].equals("tmpl")){
  				System.out.println("Could not get text ids - Invalid server responce.");
+ 				toServer.println("fail");
+ 				toServer.flush();
  				return;
  			}
  			
- 			String[] tmpIDs;
- 			String[] premIDs;
+ 			int a = 0;
  			
  			try{
- 				tmpIDs = new String[Integer.parseInt(s[1])];
+ 				a = Integer.parseInt(s[1]);
  			} catch(NumberFormatException e){
  				System.out.println("Could not get text ids - Invalid server responce.");
+ 				toServer.println("fail");
+ 				toServer.flush();
+ 				return;
  			}
- 		} else if(comm[1].equalsIgnoreCase("tmp"){
  			
- 		} else if(comm[1].equalsIgnoreCase("per"){
+ 			toServer.println("ready");
+ 			toServer.flush();
+ 			
+ 			System.out.println("Temporary text IDs:");
+ 			for(int i = 0; i < a; i++) {
+ 				while(!serverOutput.ready());
+ 				System.out.println(serverOutput.readLine());
+ 			}
+ 			
+ 			while(!serverOutput.ready());
+ 			sr = serverOutput.readLine();
+ 			s = sr.split(" ");
+ 			
+ 			if(!s[0].equals("perml")) {
+ 				System.out.println("Could not get text ids - Invalid server responce.");
+ 				toServer.println("fail");
+ 				toServer.flush();
+ 				return;
+ 			}
+ 			
+ 			try {
+ 				a = Integer.parseInt(s[1]);
+ 			} catch(NumberFormatException e) {
+ 				System.out.println("Could not get text ids - Invalid server responce.");
+ 				toServer.println("fail");
+ 				toServer.flush();
+ 				return;
+ 			}
+ 			
+ 			toServer.println("ready");
+ 			toServer.flush();
+ 			
+ 			System.out.println("Permanant text IDs:");
+ 			for(int i = 0; i < a; i++) {
+ 				while(!serverOutput.ready());
+ 				System.out.println(serverOutput.readLine());
+ 			}
+ 		} else if(comm[1].equalsIgnoreCase("tmp")){
+ 			
+ 		} else if(comm[1].equalsIgnoreCase("per")){
  			
  		} else {
  			System.out.println("Invalid Use! Must be 'listtext (all | tmp | per)'!");
@@ -240,9 +283,10 @@ import java.nio.file.Paths;
  	}
  	
  	static void removeFile() throws IOException {
- 		toServer.println("frmfile " + comm[1] + " " + comm[2]);
+ 		toServer.println("rmfile " + comm[1] + " " + comm[2]);
  		toServer.flush();
  		
+ 		while(!serverOutput.ready());
  		String responce = serverOutput.readLine();
  		
  		if(responce.equals("done")) {
@@ -273,8 +317,9 @@ import java.nio.file.Paths;
  		
  		File write = new File(fp);
  		
- 		toServer.println("fdownfile " + (!absPath ? (comm[1] + " " + comm[2]) : (comm[2] + " " + comm[3])));
+ 		toServer.println("downfile " + (!absPath ? (comm[1] + " " + comm[2]) : (comm[2] + " " + comm[3])));
  		
+ 		while(!serverOutput.ready());
  		String responcer = serverOutput.readLine();
  		String[] responces = responcer.split(" ");
  		
@@ -355,8 +400,9 @@ import java.nio.file.Paths;
  		}
  		byte[] data = readFile(read);
  		
- 		toServer.println((tmp ? "fsendtmpfile " : "fsendfile ") + idpass + " " + data.length);
+ 		toServer.println((tmp ? "sendtmpfile " : "sendfile ") + idpass + " " + data.length);
  		
+ 		while(!serverOutput.ready());
  		String responce = serverOutput.readLine();
  		if(!responce.equals("ready")) {
  			System.out.println("File sending failed - Server didn't recieve file sending request.");
@@ -421,9 +467,10 @@ import java.nio.file.Paths;
  	
  	static void removeText() throws IOException {
  		String responce = "";
- 		toServer.println("frmtxt " + comm[1] + " " + comm[2]);
+ 		toServer.println("rmtxt " + comm[1] + " " + comm[2]);
  		toServer.flush();
  		
+ 		while(!serverOutput.ready());
  		responce = serverOutput.readLine();
  		
  		if(responce.equals("done")){
@@ -441,9 +488,10 @@ import java.nio.file.Paths;
  		String text = "";
  		String responce = "";
  		
- 		toServer.println("fdowntxt " + comm[1] + " " + comm[2]);
+ 		toServer.println("downtxt " + comm[1] + " " + comm[2]);
  		toServer.flush();
  		
+ 		while(!serverOutput.ready());
  		responce = serverOutput.readLine();
  		
  		if(responce.equals("found")) {
@@ -459,6 +507,7 @@ import java.nio.file.Paths;
  			return;
  		}
  		
+ 		while(!serverOutput.ready());
  		text = serverOutput.readLine();
  		
  		System.out.println("Requested text:\n" + text);
@@ -483,15 +532,16 @@ import java.nio.file.Paths;
 		}
  		
  		if(tmp) {
- 			toServer.println("fsendtmptxt " + comm[2] + " " + comm[3] + " " + txt);
+ 			toServer.println("sendtmptxt " + comm[2] + " " + comm[3] + " " + txt);
  		} else {
- 			toServer.println("fsendtxt " + comm[1] + " " + comm[2] + " " + txt);
+ 			toServer.println("sendtxt " + comm[1] + " " + comm[2] + " " + txt);
  		}
  		
  		toServer.flush();
  		
  		System.out.println("Text sent. Waiting for conformation from server.");
  		
+ 		while(!serverOutput.ready());
  		String serverconf = serverOutput.readLine();
  		
  		if(tmp && serverconf.equals("tmptextrecieved")) {
@@ -534,6 +584,7 @@ import java.nio.file.Paths;
  		//Confirm connection
  		toServer.println("verifyConnection");
  		toServer.flush();
+ 		while(!serverOutput.ready());
  		if(!serverOutput.readLine().equals("connectionVerify")){
  			System.out.println("Connection to port " + server.getPort() + " failed. Invalid handshake recieved.");
  			connected = false;
