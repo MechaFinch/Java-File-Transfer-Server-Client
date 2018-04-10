@@ -24,7 +24,7 @@ import java.nio.file.Paths;
  				while(true) {
  					if(connected) {
  						try {
-							if(serverOutput.read() == -1) {
+							if(server.getInetAddress().isReachable(500)) {
 								if(connected) {
 									System.out.println("The connection to the server has been lost.");
 									connected = false;
@@ -214,7 +214,6 @@ import java.nio.file.Paths;
  			toServer.println("lsttxt all");
  			toServer.flush();
  			
- 			while(!serverOutput.ready());
  			String sr = serverOutput.readLine();
  			String[] s = sr.split(" ");
  			
@@ -241,11 +240,9 @@ import java.nio.file.Paths;
  			
  			System.out.println("Temporary text IDs:");
  			for(int i = 0; i < a; i++) {
- 				while(!serverOutput.ready());
  				System.out.println(serverOutput.readLine());
  			}
  			
- 			while(!serverOutput.ready());
  			sr = serverOutput.readLine();
  			s = sr.split(" ");
  			
@@ -270,7 +267,6 @@ import java.nio.file.Paths;
  			
  			System.out.println("Permanant text IDs:");
  			for(int i = 0; i < a; i++) {
- 				while(!serverOutput.ready());
  				System.out.println(serverOutput.readLine());
  			}
  		} else if(comm[1].equalsIgnoreCase("tmp")){
@@ -286,7 +282,6 @@ import java.nio.file.Paths;
  		toServer.println("rmfile " + comm[1] + " " + comm[2]);
  		toServer.flush();
  		
- 		while(!serverOutput.ready());
  		String responce = serverOutput.readLine();
  		
  		if(responce.equals("done")) {
@@ -319,7 +314,6 @@ import java.nio.file.Paths;
  		
  		toServer.println("downfile " + (!absPath ? (comm[1] + " " + comm[2]) : (comm[2] + " " + comm[3])));
  		
- 		while(!serverOutput.ready());
  		String responcer = serverOutput.readLine();
  		String[] responces = responcer.split(" ");
  		
@@ -402,7 +396,6 @@ import java.nio.file.Paths;
  		
  		toServer.println((tmp ? "sendtmpfile " : "sendfile ") + idpass + " " + data.length);
  		
- 		while(!serverOutput.ready());
  		String responce = serverOutput.readLine();
  		if(!responce.equals("ready")) {
  			System.out.println("File sending failed - Server didn't recieve file sending request.");
@@ -413,7 +406,6 @@ import java.nio.file.Paths;
  		dos.write(data);
  		dos.flush();
  		
- 		while(!serverOutput.ready());
  		responce = serverOutput.readLine();
  		if(responce.equals("done")) {
  			System.out.println("File sent successfully");
@@ -470,7 +462,6 @@ import java.nio.file.Paths;
  		toServer.println("rmtxt " + comm[1] + " " + comm[2]);
  		toServer.flush();
  		
- 		while(!serverOutput.ready());
  		responce = serverOutput.readLine();
  		
  		if(responce.equals("done")){
@@ -491,7 +482,6 @@ import java.nio.file.Paths;
  		toServer.println("downtxt " + comm[1] + " " + comm[2]);
  		toServer.flush();
  		
- 		while(!serverOutput.ready());
  		responce = serverOutput.readLine();
  		
  		if(responce.equals("found")) {
@@ -507,7 +497,6 @@ import java.nio.file.Paths;
  			return;
  		}
  		
- 		while(!serverOutput.ready());
  		text = serverOutput.readLine();
  		
  		System.out.println("Requested text:\n" + text);
@@ -541,7 +530,6 @@ import java.nio.file.Paths;
  		
  		System.out.println("Text sent. Waiting for conformation from server.");
  		
- 		while(!serverOutput.ready());
  		String serverconf = serverOutput.readLine();
  		
  		if(tmp && serverconf.equals("tmptextrecieved")) {
@@ -584,7 +572,6 @@ import java.nio.file.Paths;
  		//Confirm connection
  		toServer.println("verifyConnection");
  		toServer.flush();
- 		while(!serverOutput.ready());
  		if(!serverOutput.readLine().equals("connectionVerify")){
  			System.out.println("Connection to port " + server.getPort() + " failed. Invalid handshake recieved.");
  			connected = false;

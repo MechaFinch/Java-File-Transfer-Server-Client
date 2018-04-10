@@ -87,7 +87,6 @@ import java.util.ArrayList;
  		//Verify connection handshake
  		try {
  			System.out.println("Verifying proper connection with the client at " + clientAddress + " on port " + clientPort);
- 			while(!clientOutput.ready());
  			String verf = clientOutput.readLine();
  			if(!verf.equals("verifyConnection")) {
  	 			if(verf.equals("testfor")) {
@@ -106,19 +105,18 @@ import java.util.ArrayList;
  			
  			//Running loop
  			while(true) {
- 				//Check for closed client
- 				if(clientOutput.read() == -1) {
- 					System.out.println("The client at " + clientAddress + " on port " + clientPort + " disconnected.");
- 	 				return;
- 	 			}
- 				
  				String inputRaw = "";
  				
- 				while(!clientOutput.ready());
  				inputRaw = clientOutput.readLine();
  				
  				//Parse input
- 				String[] input = inputRaw.split(" ");
+ 				String[] input;
+ 				try{
+ 					input = inputRaw.split(" ");
+ 				} catch(NullPointerException e){
+ 					System.out.println("The client at " + clientAddress + " on port " + clientPort + " disconnected.");
+ 	 				return;
+ 				}
  				
  				if(input[0].equalsIgnoreCase("sendtmptxt")) {
  					String cont = "";
@@ -286,8 +284,7 @@ import java.util.ArrayList;
  			 		dos.flush();
  			 		
  			 		if(fe.tmp) Server.databaseraw.remove(id);
- 					
- 			 		while(!clientOutput.ready());
+ 			 		
  					clientOutput.readLine();
  					System.out.println("The client at " + clientAddress + " on port " + clientPort + " has recieved their requested file.");
  				} else if(input[0].equals("rmfile")) {
@@ -347,7 +344,6 @@ import java.util.ArrayList;
  						toClient.println("tmpl " + tmpIDs.size());
  						toClient.flush();
  						
- 						while(!clientOutput.ready());
  						String s = clientOutput.readLine();
  						
  						if(!s.equals("ready")) {
@@ -364,7 +360,6 @@ import java.util.ArrayList;
  						toClient.println("perml " + permIDs.size());
  						toClient.flush();
  						
- 						while(!clientOutput.ready());
  						if(!clientOutput.readLine().equals("ready")) {
  							System.out.println("The client at " + clientAddress + " on port " + clientPort + " didn't recieve their text IDs because they didn't recieve the number of IDs correctly.");
  							continue;
