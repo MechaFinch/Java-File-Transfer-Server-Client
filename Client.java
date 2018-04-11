@@ -13,9 +13,12 @@ import java.nio.file.Paths;
  	static boolean connected = false;
  	static String filePath = "";
  	static Socket server;
+ 	static Socket conTestSocket;
  	static String[] comm;
  	static BufferedReader serverOutput;
+ 	static BufferedReader conTestOutput;
  	static PrintWriter toServer;
+ 	static PrintWriter toConTest;
  	
  	public static void main(String[] args) throws IOException{
  		String input = "";
@@ -24,11 +27,11 @@ import java.nio.file.Paths;
  				while(true) {
  					if(connected) {
  						try {
-							if(server.getInetAddress().isReachable(500)) {
-								if(connected) {
-									System.out.println("The connection to the server has been lost.");
-									connected = false;
-								}
+							toConTest.println("checkin");
+							
+							if(!conTestOutput.readLine().equals("stillhere")) {
+								System.out.println("The connection to the server has been lost.");
+								connected = false;
 							}
 						} catch (IOException e) {
 							if(connected) {
@@ -528,8 +531,6 @@ import java.nio.file.Paths;
  		
  		toServer.flush();
  		
- 		System.out.println("Text sent. Waiting for conformation from server.");
- 		
  		String serverconf = serverOutput.readLine();
  		
  		if(tmp && serverconf.equals("tmptextrecieved")) {
@@ -537,7 +538,7 @@ import java.nio.file.Paths;
  		} else if(!tmp && serverconf.equals("textrecieved")) {
  			System.out.println("Successfully sent text to server.");
  		} else {
- 			System.out.println("Server failed to recieve text.");
+ 			System.out.println("Server failed to recieve text or the confirmation was invalid.");
  		}
  	}
  	
@@ -567,8 +568,6 @@ import java.nio.file.Paths;
  		serverOutput = new BufferedReader(new InputStreamReader(server.getInputStream()));
  		toServer = new PrintWriter(new BufferedWriter(new OutputStreamWriter(server.getOutputStream())), true);
  		
- 		connected = true;
- 		
  		//Confirm connection
  		toServer.println("verifyConnection");
  		toServer.flush();
@@ -577,6 +576,18 @@ import java.nio.file.Paths;
  			connected = false;
  			return;
  		}
+ 		
+ 		try {
+ 			conTestSocket = new Socket(InetAddress.getByName(comm[1]), Integer.parseInt(comm[2]) + 1);
+ 		} catch(ConnectException e) {
+ 			System.out.println("Connection refused to ip " + InetAddress.getByName(comm[1]) + " on port " + comm[2] + ". The server didn't initate the connection monitor.");
+ 			return;
+ 		}
+ 		
+ 		conTestOutput = new BufferedReader(new InputStreamReader(conTestSocket.getInputStream()));
+ 		toConTest = new PrintWriter(new BufferedWriter(new OutputStreamWriter(conTestSocket.getOutputStream())), true);
+ 		
+ 		connected = true;
  		System.out.println("Server connected successfully");
  	}
  	

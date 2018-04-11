@@ -13,9 +13,11 @@ import java.util.ArrayList;
  	static ArrayList<FileEntry> databaseraw = new ArrayList<FileEntry>();
  	static ArrayList<String[]> databasetext = new ArrayList<String[]>();
  	static ArrayList<Thread> connections = new ArrayList<Thread>();
+ 	static ArrayList<Thread> connectionTesters = new ArrayList<Thread>();
  	static ArrayList<InetAddress> ips = new ArrayList<InetAddress>();
  	static ArrayList<Integer> ports = new ArrayList<Integer>();
  	static ServerSocket server;
+ 	static ServerSocket conTestSS;
  	
  	static Thread ConnectionListen;
 	
@@ -46,6 +48,7 @@ import java.util.ArrayList;
  		}
  		
  		server = new ServerSocket(port);
+ 		conTestSS = new ServerSocket(port + 1);
  		
  		ConnectionListen = new Thread(new ConnectionListener());
  		ConnectionEnd = new Thread(new ConnectionEnder());
@@ -67,8 +70,10 @@ import java.util.ArrayList;
  	public void run() {
  		//Init IO
  		BufferedReader clientOutput = null;
+ 		BufferedReader conTestOutput = null;
  		PrintWriter toClient = null;
  		InetAddress clientAddress = client.getInetAddress();
+ 		Socket conTestSocket = null;
  		int clientPort = client.getPort();
  		
  		Server.ips.add(clientAddress);
@@ -101,7 +106,13 @@ import java.util.ArrayList;
  	 			toClient.flush();
  	 		}
  			
- 			System.out.println("The client at " + clientAddress + " on port " + clientPort + " verified.");
+ 			System.out.println("The client at " + clientAddress + " on port " + clientPort + " has been verified. Creating connection monitor...");
+ 			
+ 			conTestSocket = Server.conTestSS.accept();
+ 			Server.connectionTesters.add(new Thread(new ConnectionMonitor(conTestSocket)));
+ 			Server.connectionTesters.get(Server.connectionTesters.size() - 1).start();
+ 			
+ 			System.out.println("Successfully initated connection monitor with the client at " + clientAddress + " on port " + clientPort + ".");
  			
  			//Running loop
  			while(true) {
@@ -572,6 +583,34 @@ import java.util.ArrayList;
 	}
  }
  
+ class ConnectionMonitor implements Runnable{
+	 Socket testerSocket;
+	 PrintWriter toConTest;
+	 BufferedReader conTestOutput;
+	 
+	 ConnectionMonitor(Socket s) throws IOException {
+		 testerSocket = s;
+		 toConTest = new PrintWriter(new BufferedWriter(new OutputStreamWriter(testerSocket.getOutputStream())), true);
+		 conTestOutput = new BufferedReader(new InputStreamReader(testerSocket.getInputStream()));
+	 }
+	 
+	 public void run() {
+		 while(true) {
+			 try {
+				 String ping = conTestOutput.readLine();
+				 
+				 if(ping.equals("checkin")) {
+					 toConTest.println("stillhere");
+				 } else {
+					 toConTest.println("invalid");
+				 }
+			 } catch(IOException e) {
+				 
+			 }
+		 }
+	 }
+ }
+ 
  class ConnectionEnder implements Runnable{
 	 public void run() {
 		while(true) {
@@ -580,6 +619,8 @@ import java.util.ArrayList;
 					Server.connections.remove(i);
 					Server.ips.remove(i);
 					Server.ports.remove(i);
+					Server.connectionTesters.get(i).interrupt();
+					Server.connectionTesters.remove(i);
 				}
 			}
 			
