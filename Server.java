@@ -13,9 +13,11 @@ import java.util.ArrayList;
  	static ArrayList<FileEntry> databaseraw = new ArrayList<FileEntry>();
  	static ArrayList<String[]> databasetext = new ArrayList<String[]>();
  	static ArrayList<Thread> connections = new ArrayList<Thread>();
+ 	static ArrayList<Thread> connectionTesters = new ArrayList<Thread>();
  	static ArrayList<InetAddress> ips = new ArrayList<InetAddress>();
  	static ArrayList<Integer> ports = new ArrayList<Integer>();
  	static ServerSocket server;
+ 	static ServerSocket conTestSS;
  	
  	static Thread ConnectionListen;
 	
@@ -29,14 +31,6 @@ import java.util.ArrayList;
  	}
  	
  	static void initServer() throws IOException{
- 		/*
- 		if(AR.readBooleanCI("Would you like to use a custom or default port?", new String[] {"custom"}, new String[] {"default"}, "Please input either 'default' or 'custom'")) {
- 			port = AR.readIntRange(1024, 49151, "Please input the server port", "Please input a number.", "Port must be from 1024-49151", "Port must be from 1024-49151");
- 		} else {
- 			port = 48293;
- 		}
- 		*/
- 		
  		while(true) {
  			String initin = AR.readString("Please input the port, or 'default'.", "Please input a port.");
  			
@@ -54,6 +48,7 @@ import java.util.ArrayList;
  		}
  		
  		server = new ServerSocket(port);
+ 		conTestSS = new ServerSocket(port + 1);
  		
  		ConnectionListen = new Thread(new ConnectionListener());
  		ConnectionEnd = new Thread(new ConnectionEnder());
@@ -75,8 +70,10 @@ import java.util.ArrayList;
  	public void run() {
  		//Init IO
  		BufferedReader clientOutput = null;
+ 		BufferedReader conTestOutput = null;
  		PrintWriter toClient = null;
  		InetAddress clientAddress = client.getInetAddress();
+ 		Socket conTestSocket = null;
  		int clientPort = client.getPort();
  		
  		Server.ips.add(clientAddress);
@@ -109,22 +106,28 @@ import java.util.ArrayList;
  	 			toClient.flush();
  	 		}
  			
- 			System.out.println("The client at " + clientAddress + " on port " + clientPort + " verified.");
+ 			System.out.println("The client at " + clientAddress + " on port " + clientPort + " has been verified. Creating connection monitor...");
+ 			
+ 			conTestSocket = Server.conTestSS.accept();
+ 			Server.connectionTesters.add(new Thread(new ConnectionMonitor(conTestSocket)));
+ 			Server.connectionTesters.get(Server.connectionTesters.size() - 1).start();
+ 			
+ 			System.out.println("Successfully initated connection monitor with the client at " + clientAddress + " on port " + clientPort + ".");
  			
  			//Running loop
  			while(true) {
- 				//Check for closed client
- 				if(clientOutput.read() == -1) {
- 					System.out.println("The client at " + clientAddress + " on port " + clientPort + " disconnected.");
- 	 				return;
- 	 			}
- 				
  				String inputRaw = "";
  				
  				inputRaw = clientOutput.readLine();
  				
  				//Parse input
- 				String[] input = inputRaw.split(" ");
+ 				String[] input;
+ 				try{
+ 					input = inputRaw.split(" ");
+ 				} catch(NullPointerException e){
+ 					System.out.println("The client at " + clientAddress + " on port " + clientPort + " disconnected.");
+ 	 				return;
+ 				}
  				
  				if(input[0].equalsIgnoreCase("sendtmptxt")) {
  					String cont = "";
@@ -139,7 +142,7 @@ import java.util.ArrayList;
  					};
  					Server.databasetext.add(todata);
  					System.out.println("Temporary text recieved from the client at " + clientAddress + " on port " + clientPort + " with id " + input[1] + ".");
- 					toClient.println("ftmptextrecieved");
+ 					toClient.println("tmptextrecieved");
  					toClient.flush();
  				} else if(input[0].equalsIgnoreCase("sendtxt")) {
  					String cont = "";
@@ -154,7 +157,7 @@ import java.util.ArrayList;
  					};
  					Server.databasetext.add(todata);
  					System.out.println("Text recieved from the client at " + clientAddress + " on port " + clientPort + " with id " + input[1] + ".");
- 					toClient.println("ftextrecieved");
+ 					toClient.println("textrecieved");
  					toClient.flush();
  				} else if(input[0].equalsIgnoreCase("downtxt")) {
  					System.out.println("The client at " + clientAddress + " on port " + clientPort + " has requested text id " + input[1] + ".");
@@ -172,7 +175,7 @@ import java.util.ArrayList;
  								id = i;
  								break;
  							} else {
- 								toClient.println("fpasswrong");
+ 								toClient.println("passwrong");
  								toClient.flush();
  								System.out.println("The client at " + clientAddress + " on port " + clientPort + " didn't recieve the requested text because the password was incorrect.");
  								p = false;
@@ -184,13 +187,14 @@ import java.util.ArrayList;
  					if(!p) continue;
  					
  					if(txt.equals("")) {
- 						toClient.println("fnotfound");
+ 						toClient.println("notfound");
  						toClient.flush();
  						System.out.println("The text requested by the client at " + clientAddress + " on port " + clientPort + " was not found.");
  						continue;
  					}
  					
- 					toClient.println("ffound");
+ 					toClient.println("found");
+ 					toClient.flush();
  					toClient.println(txt);
  					toClient.flush();
  					System.out.println("The client at " + clientAddress + " on port " + clientPort + " has recieved their requested text.");
@@ -211,7 +215,7 @@ import java.util.ArrayList;
  								id = i;
  								break;
  							} else {
- 								toClient.println("fpasswrong");
+ 								toClient.println("passwrong");
  								toClient.flush();
  								System.out.println("The text requested for removal by the client at " + clientAddress + " on port " + clientPort + " could not be removed because the password was incorrect.");
  								p = false;
@@ -223,7 +227,7 @@ import java.util.ArrayList;
  					if(!p) continue;
  					
  					if(id == -1){
- 						toClient.println("fnotfound");
+ 						toClient.println("notfound");
  						toClient.flush();
  						System.out.println("The text requested for removal by the client at " + clientAddress + " on port " + clientPort + " could not be found.");
  						continue;
@@ -231,14 +235,14 @@ import java.util.ArrayList;
  					
  					Server.databasetext.remove(id);
  					
- 					toClient.println("fdone");
+ 					toClient.println("done");
  					toClient.flush();
  					System.out.println("The text requested for removal by the client at " + clientAddress + " on port " + clientPort + " had been removed.");
  				} else if(input[0].equals("sendfile") || input[0].equals("sendtmpfile")) {
  					System.out.println("Recieving file from the client at " + clientAddress + " on port " + clientPort + ".");
  					int datalength = Integer.parseInt(input[3]);
  					
- 					toClient.println("fready");
+ 					toClient.println("ready");
  					toClient.flush();
  					
  					DataInputStream dis = new DataInputStream(client.getInputStream());
@@ -251,7 +255,6 @@ import java.util.ArrayList;
  					
  					toClient.println("done");
  					toClient.flush();
- 					clientOutput.readLine();
  					System.out.println("File recieved from the client at " +  clientAddress + " on port " + clientPort + " successfully.");
  				} else if(input[0].equals("downfile")) {
  					System.out.println("The client at " + clientAddress + " on port " + clientPort + " has requested file id " + input[1] + ".");
@@ -266,7 +269,7 @@ import java.util.ArrayList;
  								id = i;
  								break;
  							} else {
- 								toClient.println("fpasswrong");
+ 								toClient.println("passwrong");
  								toClient.flush();
  								System.out.println("The client at " + clientAddress + " on port " + clientPort + " didn't recieve the requested file because the password was incorrect.");
  								p = false;
@@ -278,13 +281,13 @@ import java.util.ArrayList;
  					if(!p) continue;
  					
  					if(id == -1) {
- 						toClient.println("fnotfound");
+ 						toClient.println("notfound");
  						toClient.flush();
  						System.out.println("The file requested by the client at " + clientAddress + " on port " + clientPort + " could not be found.");
  						continue;
  					}
  					
- 					toClient.println("fsending " + fe.data.length);
+ 					toClient.println("sending " + fe.data.length);
  					toClient.flush();
  					
  					DataOutputStream dos = new DataOutputStream(client.getOutputStream());
@@ -292,7 +295,7 @@ import java.util.ArrayList;
  			 		dos.flush();
  			 		
  			 		if(fe.tmp) Server.databaseraw.remove(id);
- 					
+ 			 		
  					clientOutput.readLine();
  					System.out.println("The client at " + clientAddress + " on port " + clientPort + " has recieved their requested file.");
  				} else if(input[0].equals("rmfile")) {
@@ -309,7 +312,7 @@ import java.util.ArrayList;
  								id = i;
  								break;
  							} else {
- 								toClient.println("fpasswrong");
+ 								toClient.println("passwrong");
  								toClient.flush();
  								System.out.println("The file requested for removal by the client at " + clientAddress + " on port " + clientPort + " could not be removed because the password was incorrect.");
  								p = false;
@@ -321,7 +324,7 @@ import java.util.ArrayList;
  					if(!p) continue;
  					
  					if(id == -1) {
- 						toClient.println("fnotfound");
+ 						toClient.println("notfound");
  						toClient.flush();
  						System.out.println("The file requested for removal by the client at " + clientAddress + " on port " + clientPort + " could not be found.");
  						continue;
@@ -329,9 +332,66 @@ import java.util.ArrayList;
  					
  					Server.databaseraw.remove(id);
  					
- 					toClient.println("fdone");
+ 					toClient.println("done");
  					toClient.flush();
  					System.out.println("The file requested for removal by the client at " + clientAddress + " on port " + clientPort + " had been removed.");
+ 				} else if(input[0].equals("lsttxt")){
+ 					if(input[1].equals("all")){
+ 						System.out.println("The client at " + clientAddress + " on port " + clientPort + " has requested all text IDs.");
+ 						
+ 						ArrayList<String> tmpIDs = new ArrayList<String>();
+ 						ArrayList<String> permIDs = new ArrayList<String>();
+ 						
+ 						for(int i = 0; i < Server.databasetext.size(); i++){
+ 							String[] s = Server.databasetext.get(i);
+ 							
+ 							if(s[0].equals("tmptxt")){
+ 								tmpIDs.add(s[1]);
+ 							} else {
+ 								permIDs.add(s[1]);
+ 							}
+ 						}
+ 						
+ 						toClient.println("tmpl " + tmpIDs.size());
+ 						toClient.flush();
+ 						
+ 						String s = clientOutput.readLine();
+ 						
+ 						if(!s.equals("ready")) {
+ 							System.out.println("The client at " + clientAddress + " on port " + clientPort + " didn't recieve their text IDs because they didn't recieve the number of IDs correctly.");
+ 							System.out.println(s);
+ 							continue;
+ 						}
+ 						
+ 						for(int i = 0; i < tmpIDs.size(); i++){
+ 							toClient.println(tmpIDs.get(i));
+ 							toClient.flush();
+ 						}
+ 						
+ 						toClient.println("perml " + permIDs.size());
+ 						toClient.flush();
+ 						
+ 						if(!clientOutput.readLine().equals("ready")) {
+ 							System.out.println("The client at " + clientAddress + " on port " + clientPort + " didn't recieve their text IDs because they didn't recieve the number of IDs correctly.");
+ 							continue;
+ 						}
+ 						
+ 						for(int i = 0; i < permIDs.size(); i++){
+ 							toClient.println(permIDs.get(i));
+ 							toClient.flush();
+ 						}
+ 						
+ 						toClient.println("done");
+ 						toClient.flush();
+ 					} else if(input[1].equals("tmp")){
+ 						System.out.println("The client at " + clientAddress + " on port " + clientPort + " has requested temporary text IDs.");
+ 						
+ 					} else if(input[1].equals("per")){
+ 						System.out.println("The client at " + clientAddress + " on port " + clientPort + " has requested permanant text IDs.");
+ 						
+ 					} else {
+ 						System.out.println("The client at " + clientAddress + " on port " + clientPort + " has requested text ids ivalidly.");
+ 					}
  				} else {
  					System.out.println(inputRaw);
  				}
@@ -523,6 +583,34 @@ import java.util.ArrayList;
 	}
  }
  
+ class ConnectionMonitor implements Runnable{
+	 Socket testerSocket;
+	 PrintWriter toConTest;
+	 BufferedReader conTestOutput;
+	 
+	 ConnectionMonitor(Socket s) throws IOException {
+		 testerSocket = s;
+		 toConTest = new PrintWriter(new BufferedWriter(new OutputStreamWriter(testerSocket.getOutputStream())), true);
+		 conTestOutput = new BufferedReader(new InputStreamReader(testerSocket.getInputStream()));
+	 }
+	 
+	 public void run() {
+		 while(true) {
+			 try {
+				 String ping = conTestOutput.readLine();
+				 
+				 if(ping.equals("checkin")) {
+					 toConTest.println("stillhere");
+				 } else {
+					 toConTest.println("invalid");
+				 }
+			 } catch(IOException e) {
+				 
+			 }
+		 }
+	 }
+ }
+ 
  class ConnectionEnder implements Runnable{
 	 public void run() {
 		while(true) {
@@ -531,6 +619,8 @@ import java.util.ArrayList;
 					Server.connections.remove(i);
 					Server.ips.remove(i);
 					Server.ports.remove(i);
+					Server.connectionTesters.get(i).interrupt();
+					Server.connectionTesters.remove(i);
 				}
 			}
 			

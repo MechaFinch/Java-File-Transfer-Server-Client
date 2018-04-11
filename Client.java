@@ -13,9 +13,12 @@ import java.nio.file.Paths;
  	static boolean connected = false;
  	static String filePath = "";
  	static Socket server;
+ 	static Socket conTestSocket;
  	static String[] comm;
  	static BufferedReader serverOutput;
+ 	static BufferedReader conTestOutput;
  	static PrintWriter toServer;
+ 	static PrintWriter toConTest;
  	
  	public static void main(String[] args) throws IOException{
  		String input = "";
@@ -24,11 +27,11 @@ import java.nio.file.Paths;
  				while(true) {
  					if(connected) {
  						try {
-							if(serverOutput.read() == -1) {
-								if(connected) {
-									System.out.println("The connection to the server has been lost.");
-									connected = false;
-								}
+							toConTest.println("checkin");
+							
+							if(!conTestOutput.readLine().equals("stillhere")) {
+								System.out.println("The connection to the server has been lost.");
+								connected = false;
 							}
 						} catch (IOException e) {
 							if(connected) {
@@ -193,6 +196,13 @@ import java.nio.file.Paths;
 	 				}
 	 				
 	 				removeFile();
+	 			} else if(comm[0].equalsIgnoreCase("listtext")){
+	 				if(comm.length != 2){
+	 					System.out.println("Invalid Use! Must be 'listtext (all | tmp | per)'!");
+	 					continue;
+	 				}
+	 				
+	 				listtext();
 	 			}
  			} catch(SocketException e) {
  				if(!e.getMessage().equalsIgnoreCase("Connection reset")) {
@@ -202,8 +212,77 @@ import java.nio.file.Paths;
  		}
  	}
  	
+ 	static void listtext() throws IOException {
+ 		if(comm[1].equalsIgnoreCase("all")){
+ 			toServer.println("lsttxt all");
+ 			toServer.flush();
+ 			
+ 			String sr = serverOutput.readLine();
+ 			String[] s = sr.split(" ");
+ 			
+ 			if(!s[0].equals("tmpl")){
+ 				System.out.println("Could not get text ids - Invalid server responce.");
+ 				toServer.println("fail");
+ 				toServer.flush();
+ 				return;
+ 			}
+ 			
+ 			int a = 0;
+ 			
+ 			try{
+ 				a = Integer.parseInt(s[1]);
+ 			} catch(NumberFormatException e){
+ 				System.out.println("Could not get text ids - Invalid server responce.");
+ 				toServer.println("fail");
+ 				toServer.flush();
+ 				return;
+ 			}
+ 			
+ 			toServer.println("ready");
+ 			toServer.flush();
+ 			
+ 			System.out.println("Temporary text IDs:");
+ 			for(int i = 0; i < a; i++) {
+ 				System.out.println(serverOutput.readLine());
+ 			}
+ 			
+ 			sr = serverOutput.readLine();
+ 			s = sr.split(" ");
+ 			
+ 			if(!s[0].equals("perml")) {
+ 				System.out.println("Could not get text ids - Invalid server responce.");
+ 				toServer.println("fail");
+ 				toServer.flush();
+ 				return;
+ 			}
+ 			
+ 			try {
+ 				a = Integer.parseInt(s[1]);
+ 			} catch(NumberFormatException e) {
+ 				System.out.println("Could not get text ids - Invalid server responce.");
+ 				toServer.println("fail");
+ 				toServer.flush();
+ 				return;
+ 			}
+ 			
+ 			toServer.println("ready");
+ 			toServer.flush();
+ 			
+ 			System.out.println("Permanant text IDs:");
+ 			for(int i = 0; i < a; i++) {
+ 				System.out.println(serverOutput.readLine());
+ 			}
+ 		} else if(comm[1].equalsIgnoreCase("tmp")){
+ 			
+ 		} else if(comm[1].equalsIgnoreCase("per")){
+ 			
+ 		} else {
+ 			System.out.println("Invalid Use! Must be 'listtext (all | tmp | per)'!");
+ 		}
+ 	}
+ 	
  	static void removeFile() throws IOException {
- 		toServer.println("frmfile " + comm[1] + " " + comm[2]);
+ 		toServer.println("rmfile " + comm[1] + " " + comm[2]);
  		toServer.flush();
  		
  		String responce = serverOutput.readLine();
@@ -236,7 +315,7 @@ import java.nio.file.Paths;
  		
  		File write = new File(fp);
  		
- 		toServer.println("fdownfile " + (!absPath ? (comm[1] + " " + comm[2]) : (comm[2] + " " + comm[3])));
+ 		toServer.println("downfile " + (!absPath ? (comm[1] + " " + comm[2]) : (comm[2] + " " + comm[3])));
  		
  		String responcer = serverOutput.readLine();
  		String[] responces = responcer.split(" ");
@@ -318,7 +397,7 @@ import java.nio.file.Paths;
  		}
  		byte[] data = readFile(read);
  		
- 		toServer.println((tmp ? "fsendtmpfile " : "fsendfile ") + idpass + " " + data.length);
+ 		toServer.println((tmp ? "sendtmpfile " : "sendfile ") + idpass + " " + data.length);
  		
  		String responce = serverOutput.readLine();
  		if(!responce.equals("ready")) {
@@ -330,7 +409,6 @@ import java.nio.file.Paths;
  		dos.write(data);
  		dos.flush();
  		
- 		while(!serverOutput.ready());
  		responce = serverOutput.readLine();
  		if(responce.equals("done")) {
  			System.out.println("File sent successfully");
@@ -384,7 +462,7 @@ import java.nio.file.Paths;
  	
  	static void removeText() throws IOException {
  		String responce = "";
- 		toServer.println("frmtxt " + comm[1] + " " + comm[2]);
+ 		toServer.println("rmtxt " + comm[1] + " " + comm[2]);
  		toServer.flush();
  		
  		responce = serverOutput.readLine();
@@ -404,7 +482,7 @@ import java.nio.file.Paths;
  		String text = "";
  		String responce = "";
  		
- 		toServer.println("fdowntxt " + comm[1] + " " + comm[2]);
+ 		toServer.println("downtxt " + comm[1] + " " + comm[2]);
  		toServer.flush();
  		
  		responce = serverOutput.readLine();
@@ -446,14 +524,12 @@ import java.nio.file.Paths;
 		}
  		
  		if(tmp) {
- 			toServer.println("fsendtmptxt " + comm[2] + " " + comm[3] + " " + txt);
+ 			toServer.println("sendtmptxt " + comm[2] + " " + comm[3] + " " + txt);
  		} else {
- 			toServer.println("fsendtxt " + comm[1] + " " + comm[2] + " " + txt);
+ 			toServer.println("sendtxt " + comm[1] + " " + comm[2] + " " + txt);
  		}
  		
  		toServer.flush();
- 		
- 		System.out.println("Text sent. Waiting for conformation from server.");
  		
  		String serverconf = serverOutput.readLine();
  		
@@ -462,7 +538,7 @@ import java.nio.file.Paths;
  		} else if(!tmp && serverconf.equals("textrecieved")) {
  			System.out.println("Successfully sent text to server.");
  		} else {
- 			System.out.println("Server failed to recieve text.");
+ 			System.out.println("Server failed to recieve text or the confirmation was invalid.");
  		}
  	}
  	
@@ -492,8 +568,6 @@ import java.nio.file.Paths;
  		serverOutput = new BufferedReader(new InputStreamReader(server.getInputStream()));
  		toServer = new PrintWriter(new BufferedWriter(new OutputStreamWriter(server.getOutputStream())), true);
  		
- 		connected = true;
- 		
  		//Confirm connection
  		toServer.println("verifyConnection");
  		toServer.flush();
@@ -502,6 +576,18 @@ import java.nio.file.Paths;
  			connected = false;
  			return;
  		}
+ 		
+ 		try {
+ 			conTestSocket = new Socket(InetAddress.getByName(comm[1]), Integer.parseInt(comm[2]) + 1);
+ 		} catch(ConnectException e) {
+ 			System.out.println("Connection refused to ip " + InetAddress.getByName(comm[1]) + " on port " + comm[2] + ". The server didn't initate the connection monitor.");
+ 			return;
+ 		}
+ 		
+ 		conTestOutput = new BufferedReader(new InputStreamReader(conTestSocket.getInputStream()));
+ 		toConTest = new PrintWriter(new BufferedWriter(new OutputStreamWriter(conTestSocket.getOutputStream())), true);
+ 		
+ 		connected = true;
  		System.out.println("Server connected successfully");
  	}
  	
