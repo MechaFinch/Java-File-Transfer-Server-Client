@@ -273,9 +273,69 @@ import java.nio.file.Paths;
  				System.out.println(serverOutput.readLine());
  			}
  		} else if(comm[1].equalsIgnoreCase("tmp")){
+ 			toServer.println("lsttxt tmp");
+ 			toServer.flush();
  			
+ 			String sr = serverOutput.readLine();
+ 			String[] s = sr.split(" ");
+ 			
+ 			if(!s[0].equals("tmpl")){
+ 				System.out.println("Could not get text ids - Invalid server responce.");
+ 				toServer.println("fail");
+ 				toServer.flush();
+ 				return;
+ 			}
+ 			
+ 			int a = 0;
+ 			
+ 			try{
+ 				a = Integer.parseInt(s[1]);
+ 			} catch(NumberFormatException e){
+ 				System.out.println("Could not get text ids - Invalid server responce.");
+ 				toServer.println("fail");
+ 				toServer.flush();
+ 				return;
+ 			}
+ 			
+ 			toServer.println("ready");
+ 			toServer.flush();
+ 			
+ 			System.out.println("Temporary text IDs:");
+ 			for(int i = 0; i < a; i++) {
+ 				System.out.println(serverOutput.readLine());
+ 			}
  		} else if(comm[1].equalsIgnoreCase("per")){
+ 			toServer.println("lsttxt per");
+ 			toServer.flush();
  			
+ 			String sr = serverOutput.readLine();
+ 			String[] s = sr.split(" ");
+ 			
+ 			if(!s[0].equals("perml")) {
+ 				System.out.println("Could not get text ids - Invalid server responce.");
+ 				toServer.println("fail");
+ 				toServer.flush();
+ 				return;
+ 			}
+ 			
+ 			int a = 0;
+ 			
+ 			try {
+ 				a = Integer.parseInt(s[1]);
+ 			} catch(NumberFormatException e) {
+ 				System.out.println("Could not get text ids - Invalid server responce.");
+ 				toServer.println("fail");
+ 				toServer.flush();
+ 				return;
+ 			}
+ 			
+ 			toServer.println("ready");
+ 			toServer.flush();
+ 			
+ 			System.out.println("Permanant text IDs:");
+ 			for(int i = 0; i < a; i++) {
+ 				System.out.println(serverOutput.readLine());
+ 			}
  		} else {
  			System.out.println("Invalid Use! Must be 'listtext (all | tmp | per)'!");
  		}

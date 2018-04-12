@@ -381,14 +381,64 @@ import java.util.ArrayList;
  							toClient.flush();
  						}
  						
- 						toClient.println("done");
- 						toClient.flush();
+ 						System.out.println("The client at " + clientAddress + " on port " + clientPort + " has recieved their text IDs.");
  					} else if(input[1].equals("tmp")){
  						System.out.println("The client at " + clientAddress + " on port " + clientPort + " has requested temporary text IDs.");
  						
+ 						ArrayList<String> tmpIDs = new ArrayList<String>();
+ 						
+ 						for(int i = 0; i < Server.databasetext.size(); i++) {
+ 							String[] s = Server.databasetext.get(i);
+ 							
+ 							if(s[0].equals("tmptxt")) {
+ 								tmpIDs.add(s[1]);
+ 							}
+ 						}
+ 						
+ 						toClient.println("tmpl " + tmpIDs.size());
+ 						toClient.flush();
+ 						
+ 						String s = clientOutput.readLine();
+ 						
+ 						if(!s.equals("ready")) {
+ 							System.out.println("The client at " + clientAddress + " on port " + clientPort + " didn't recieve their text IDs because they didn't recieve the number of IDs correctly.");
+ 							System.out.println(s);
+ 							continue;
+ 						}
+ 						
+ 						for(int i = 0; i < tmpIDs.size(); i++){
+ 							toClient.println(tmpIDs.get(i));
+ 							toClient.flush();
+ 						}
+ 						
+ 						System.out.println("The client at " + clientAddress + " on port " + clientPort + " has recieved their text IDs.");
  					} else if(input[1].equals("per")){
  						System.out.println("The client at " + clientAddress + " on port " + clientPort + " has requested permanant text IDs.");
  						
+ 						ArrayList<String> permIDs = new ArrayList<String>();
+ 						
+ 						for(int i = 0; i < Server.databasetext.size(); i++) {
+ 							String[] s = Server.databasetext.get(i);
+ 							
+ 							if(s[0].equals("txt")) {
+ 								permIDs.add(s[1]);
+ 							}
+ 						}
+ 						
+ 						toClient.println("perml " + permIDs.size());
+ 						toClient.flush();
+ 						
+ 						if(!clientOutput.readLine().equals("ready")) {
+ 							System.out.println("The client at " + clientAddress + " on port " + clientPort + " didn't recieve their text IDs because they didn't recieve the number of IDs correctly.");
+ 							continue;
+ 						}
+ 						
+ 						for(int i = 0; i < permIDs.size(); i++){
+ 							toClient.println(permIDs.get(i));
+ 							toClient.flush();
+ 						}
+ 						
+ 						System.out.println("The client at " + clientAddress + " on port " + clientPort + " has recieved their text IDs.");
  					} else {
  						System.out.println("The client at " + clientAddress + " on port " + clientPort + " has requested text ids ivalidly.");
  					}
